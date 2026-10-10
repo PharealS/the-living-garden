@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>The Living Garden — For Ara</title>
+  <meta name="description" content="A magical, living interactive cherry blossom garden at dusk for Ara.">
+  <link rel="stylesheet" href="css/style.css?v=12">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>">
+</head>
+<body>
+
+  <!-- Fullscreen Pixel Garden Canvas -->
+  <canvas id="garden-canvas"></canvas>
+
+  <!-- Cinematic Vignette Atmosphere -->
+  <div class="vignette-overlay"></div>
+
+  <!-- Snapshot Shutter Flash -->
+  <div id="snapshot-flash"></div>
+
+
+
+  <!-- Top Floating App Bar & Controls (All Shifted to the Left) -->
+  <header class="garden-header-bar">
+    <div class="header-left-cluster">
+      <!-- Romantic Brand Capsule -->
+      <div class="brand-badge" title="The Living Garden · Ara & Atharv">
+        <span class="brand-icon">🌸</span>
+        <div class="brand-text">
+          <span class="brand-title">The Living Garden</span>
+          <span class="brand-sub">Ara & Atharv</span>
+        </div>
+      </div>
+
+      <!-- Shifted 4 Action Controls (Left Aligned, Compact Footprint) -->
+      <nav class="header-actions" aria-label="Garden Controls">
+        <!-- Make a Wish Button -->
+        <button id="wish-btn" class="glass-pill-btn" title="Make a Wish Upon a Star (or press Space)" aria-label="Make a wish">
+          <span class="btn-icon">⭐</span>
+          <span class="pill-label">Wish</span>
+        </button>
+
+        <!-- Garden Wonders Discovery Tracker -->
+        <div class="discovery-wrapper">
+          <button id="discovery-toggle" class="glass-pill-btn" title="Garden Wonders Tracker" aria-label="Garden Wonders Tracker">
+            <span class="btn-icon">🌿</span>
+            <span class="pill-label">Wonders</span>
+            <span id="discovery-count" class="pill-badge">0/5</span>
+          </button>
+
+          <!-- Discovery Dropdown Checklist -->
+          <div id="discovery-dropdown">
+            <div class="dropdown-header">
+              <span>Garden Wonders</span>
+              <span id="discovery-progress-txt" class="pill-badge">0%</span>
+            </div>
+            <ul class="discovery-list">
+              <li id="wonder-lantern" class="discovery-item">
+                <span class="item-check">✓</span> 🏮 Ancient Lantern (Tap to light)
+              </li>
+              <li id="wonder-chimes" class="discovery-item">
+                <span class="item-check">✓</span> 🎐 Windchimes (Brush or tap)
+              </li>
+              <li id="wonder-flowers" class="discovery-item">
+                <span class="item-check">✓</span> 🌸 Wildflowers (<span id="bloomed-count-txt">0</span>/10 bloomed)
+              </li>
+              <li id="wonder-pond" class="discovery-item">
+                <span class="item-check">✓</span> 💧 Serene Pond (Touch water & lilies)
+              </li>
+              <li id="wonder-tree" class="discovery-item">
+                <span class="item-check">✓</span> 🌸 Sacred Sakura (Give water to seed)
+              </li>
+            </ul>
+            <div class="dropdown-tip">
+              Secret: Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> to awaken instantly
+            </div>
+          </div>
+        </div>
+
+        <!-- Memory Photo Snapshot Button -->
+        <button id="snapshot-btn" class="glass-pill-btn" title="Save Garden Memory Photo" aria-label="Take memory snapshot">
+          <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+          <span class="pill-label">Snapshot</span>
+        </button>
+
+        <!-- Discreet Ambient Soundscape Toggle -->
+        <button id="audio-toggle" class="glass-pill-btn sound-playing" title="Toggle Soundscape (or press M)" aria-label="Toggle Sound">
+          <div class="sound-wave-bars">
+            <span></span><span></span><span></span>
+          </div>
+          <span id="audio-label" class="pill-label">Sound</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Center Poetic Environmental Instruction (Positioned gracefully below top controls) -->
+  <div id="environmental-hint">
+    <span class="hint-star-icon">✧</span>
+    <span class="hint-body-text" id="hint-text">Take a look around, some things are worth touching, like Atharv for instance, but also other things, like lanterns and windchimes. Maybe pick up a flower pot and water some plants. Perhaps you'll witness a surprise.</span>
+    <button id="dismiss-hint-btn" class="hint-close-btn" title="Dismiss hint" aria-label="Dismiss">✕</button>
+  </div>
+
+  <!-- Keyboard Shortcuts Hints (Discreet Bottom-Left) -->
+  <div id="keyboard-hints">
+    <span><kbd>Space</kbd> Wish</span>
+    <span><kbd>M</kbd> Sound</span>
+  </div>
+
+  <!-- Re-open Letter Floating Button (Appears after transformation if letter closed) -->
+  <button id="letter-reopen-btn">
+    <span class="reopen-heart-icon">💌</span>
+    <span>Read Ara's Letter</span>
+  </button>
+
+  <!-- Final Wholesome Birthday Letter (The Keepsake Masterpiece) -->
+  <div id="letter-overlay" class="hidden">
+    <div id="letter-container">
+      <!-- Ornate SVG Corner Filigree -->
+      <svg class="corner-ornament corner-tl" viewBox="0 0 32 32" fill="none" stroke="currentColor">
+        <path d="M2 30V10C2 5.58 5.58 2 10 2h20M2 18C2 9.16 9.16 2 18 2M2 2V2" stroke-width="1.5" stroke="#fef08a"/>
+        <circle cx="8" cy="8" r="2" fill="#fef08a"/>
+      </svg>
+      <svg class="corner-ornament corner-tr" viewBox="0 0 32 32" fill="none" stroke="currentColor">
+        <path d="M2 30V10C2 5.58 5.58 2 10 2h20M2 18C2 9.16 9.16 2 18 2M2 2V2" stroke-width="1.5" stroke="#fef08a"/>
+        <circle cx="8" cy="8" r="2" fill="#fef08a"/>
+      </svg>
+      <svg class="corner-ornament corner-bl" viewBox="0 0 32 32" fill="none" stroke="currentColor">
+        <path d="M2 30V10C2 5.58 5.58 2 10 2h20M2 18C2 9.16 9.16 2 18 2M2 2V2" stroke-width="1.5" stroke="#fef08a"/>
+        <circle cx="8" cy="8" r="2" fill="#fef08a"/>
+      </svg>
+      <svg class="corner-ornament corner-br" viewBox="0 0 32 32" fill="none" stroke="currentColor">
+        <path d="M2 30V10C2 5.58 5.58 2 10 2h20M2 18C2 9.16 9.16 2 18 2M2 2V2" stroke-width="1.5" stroke="#fef08a"/>
+        <circle cx="8" cy="8" r="2" fill="#fef08a"/>
+      </svg>
+
+      <!-- Embossed Wax Seal Badge -->
+      <div class="wax-seal" title="Sealed with Love">A ♡ A</div>
+
+      <div id="letter-date">August 7, 2027</div>
+      <h1 id="letter-heading">To the Love of my Life.</h1>
+      
+      <div class="letter-divider">
+        <span>✦</span>
+      </div>
+
+      <div id="letter-body">
+        <!-- Injected dynamically from CONFIG in js/config.js -->
+      </div>
+
+      <div id="letter-signature">
+        <em>Forever yours,</em><br>
+        <strong>Atharv</strong>
+      </div>
+
+      <div class="letter-actions-row">
+        <button id="close-letter-btn" class="letter-btn">Keep Wandering the Garden</button>
+        <button id="download-letter-btn" class="letter-btn letter-btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Save Keepsake Note
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Atharv Preview Banner (Re-drapes curtain during preview) -->
+  <div id="curtain-preview-banner">
+    <button id="curtain-redrape-btn">
+      <span>🎭</span>
+      <span>Curtain Preview Mode · <strong>Re-drape</strong></span>
+    </button>
+  </div>
+
+  <!-- Enchanted Theatrical Birthday Curtain Overlay -->
+  <div id="birthday-curtain">
+    <!-- Velvet Drapes with Royal Silk Folds -->
+    <div class="curtain-panel curtain-left" id="curtain-left"></div>
+    <div class="curtain-panel curtain-right" id="curtain-right"></div>
+    
+    <!-- Top Ornate Valance & Golden Trim -->
+    <div class="curtain-valance" id="curtain-valance">
+      <div class="valance-stars">
+        <span>✦</span><span>✧</span><span>✦</span><span>✧</span><span>✦</span>
+      </div>
+    </div>
+
+    <!-- Floating Stardust Particles -->
+    <div class="curtain-stardust" id="curtain-stardust"></div>
+
+    <!-- Center Theatrical Glassmorphic Card -->
+    <div class="curtain-content" id="curtain-content">
+      <div class="curtain-card">
+        <!-- Corner Filigree Ornaments -->
+        <span class="plaque-corner plaque-tl">✦</span>
+        <span class="plaque-corner plaque-tr">✦</span>
+        <span class="plaque-corner plaque-bl">✦</span>
+        <span class="plaque-corner plaque-br">✦</span>
+
+        <!-- Luminous Botanical Emblem -->
+        <div class="curtain-emblem-wrap">
+          <div class="curtain-emblem-halo"></div>
+          <div class="curtain-emblem">🌱</div>
+        </div>
+
+        <div class="curtain-badge">Dedicated to Ara</div>
+
+        <h1 class="curtain-title">The gardener is working, shh... 🤫</h1>
+
+        <p class="curtain-quote">
+          “A secret sanctuary is being quietly nurtured in the starlight just for you.<br>
+          Every petal, lantern, and ripple is preparing for your special day.”
+        </p>
+
+        <div class="curtain-divider">
+          <span>✦</span> <span>✧</span> <span>✦</span>
+        </div>
+
+        <!-- Real-Time Countdown (Days : Hours : Minutes : Seconds) -->
+        <div class="countdown-container" id="curtain-countdown">
+          <div class="countdown-unit">
+            <div class="countdown-val" id="cd-days">--</div>
+            <div class="countdown-lbl">Days</div>
+          </div>
+          <div class="countdown-colon">:</div>
+          <div class="countdown-unit">
+            <div class="countdown-val" id="cd-hours">--</div>
+            <div class="countdown-lbl">Hours</div>
+          </div>
+          <div class="countdown-colon">:</div>
+          <div class="countdown-unit">
+            <div class="countdown-val" id="cd-mins">--</div>
+            <div class="countdown-lbl">Minutes</div>
+          </div>
+          <div class="countdown-colon">:</div>
+          <div class="countdown-unit">
+            <div class="countdown-val" id="cd-secs">--</div>
+            <div class="countdown-lbl">Seconds</div>
+          </div>
+        </div>
+
+        <div class="curtain-target-date">
+          <span class="target-star">✨</span>
+          <span>Gates unlock on August 7, 2027</span>
+          <span class="target-star">✨</span>
+        </div>
+
+        <!-- Curtain Ambient Music Pill -->
+        <button id="curtain-audio-toggle" class="curtain-audio-pill" title="Toggle Ambient Music" aria-label="Toggle Sound">
+          <span class="curtain-audio-icon">🎵</span>
+          <span id="curtain-audio-label">Ambient Sound · Playing</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Fairy Stardust Cursor & Dynamic Tooltip (Root Top Layer) -->
+  <div id="custom-cursor">
+    <div class="cursor-glow"></div>
+    <div class="cursor-core"></div>
+  </div>
+  <div id="cursor-tooltip"></div>
+  <script src="js/config.js?v=13"></script>
+  <script src="js/audio.js?v=13"></script>
+  <script src="js/sprites.js?v=13"></script>
+  <script src="js/renderer.js?v=13"></script>
+  <script src="js/garden.js?v=13"></script>
+  <script src="js/curtain.js?v=13"></script>
+
+  <script>
+    // Wire UI Elements with enhanced UX micro-interactions
+    document.addEventListener("DOMContentLoaded", () => {
+      const audioToggle = document.getElementById("audio-toggle");
+      const audioLabel = document.getElementById("audio-label");
+      const letterOverlay = document.getElementById("letter-overlay");
+      const closeLetterBtn = document.getElementById("close-letter-btn");
+      const reopenLetterBtn = document.getElementById("letter-reopen-btn");
+      const downloadLetterBtn = document.getElementById("download-letter-btn");
+      const dismissHintBtn = document.getElementById("dismiss-hint-btn");
+      const hintEl = document.getElementById("environmental-hint");
+      const wishBtn = document.getElementById("wish-btn");
+      const snapshotBtn = document.getElementById("snapshot-btn");
+      const discoveryToggle = document.getElementById("discovery-toggle");
+      const discoveryDropdown = document.getElementById("discovery-dropdown");
+      const discoveryCount = document.getElementById("discovery-count");
+      const discoveryProgressTxt = document.getElementById("discovery-progress-txt");
+      const bloomedCountTxt = document.getElementById("bloomed-count-txt");
+
+      // Custom cursor & tooltip elements
+      const customCursor = document.getElementById("custom-cursor");
+      const cursorTooltip = document.getElementById("cursor-tooltip");
+
+      // Audio Toggle Click
+      if (audioToggle) {
+        audioToggle.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (window.gardenAudio) {
+            const isMuted = window.gardenAudio.toggleMute();
+            if (isMuted) {
+              audioToggle.classList.remove("sound-playing");
+              audioToggle.classList.add("sound-muted");
+              if (audioLabel) audioLabel.textContent = "Muted";
+            } else {
+              audioToggle.classList.add("sound-playing");
+              audioToggle.classList.remove("sound-muted");
+              if (audioLabel) audioLabel.textContent = "Sound";
+            }
+          }
+        });
+      }
+
+      // Make a Wish Button
+      if (wishBtn) {
+        wishBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (window.garden) {
+            window.garden.triggerWish();
+          }
+        });
+      }
+
+      // Snapshot Photo Button
+      if (snapshotBtn) {
+        snapshotBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (window.garden) {
+            window.garden.takeSnapshot();
+          }
+        });
+      }
+
+      // Discovery Dropdown Toggle
+      if (discoveryToggle && discoveryDropdown) {
+        discoveryToggle.addEventListener("click", (e) => {
+          e.stopPropagation();
+          discoveryDropdown.classList.toggle("visible");
+        });
+
+        // Close dropdown when clicking outside
+        window.addEventListener("click", (e) => {
+          if (!discoveryDropdown.contains(e.target) && !discoveryToggle.contains(e.target)) {
+            discoveryDropdown.classList.remove("visible");
+          }
+        });
+      }
+
+      // Dismiss Hint Button
+      if (dismissHintBtn && hintEl) {
+        dismissHintBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          hintEl.style.opacity = "0";
+          setTimeout(() => { hintEl.style.display = "none"; }, 400);
+        });
+      }
+
+      // Close Letter Click
+      if (closeLetterBtn && letterOverlay) {
+        closeLetterBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          letterOverlay.classList.remove("visible");
+          if (window.gardenAudio) {
+            window.gardenAudio.unduckMusic(1.8);
+          }
+          setTimeout(() => {
+            letterOverlay.classList.add("hidden");
+            if (reopenLetterBtn) {
+              reopenLetterBtn.classList.add("visible");
+            }
+          }, 600);
+        });
+      }
+
+      // Re-open Letter Click
+      if (reopenLetterBtn && letterOverlay) {
+        reopenLetterBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (window.gardenAudio) {
+            window.gardenAudio.playLetterOpen();
+            window.gardenAudio.duckMusic(0.3, 1.4);
+          }
+          letterOverlay.classList.remove("hidden");
+          setTimeout(() => {
+            letterOverlay.classList.add("visible");
+            reopenLetterBtn.classList.remove("visible");
+          }, 50);
+        });
+      }
+
+      // Download Keepsake Note
+      if (downloadLetterBtn) {
+        downloadLetterBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const config = window.GARDEN_CONFIG || {};
+          const paragraphs = (config.letterParagraphs || []).join("\n\n");
+          const noteText = `${config.letterHeading || "To the Love of my Life."}\n\n${paragraphs}\n\n${config.letterClosing || "Forever yours,"}\n${config.letterSignature || "Atharv"}\n\n[The Living Garden — Dedicated to Ara]`;
+          
+          const blob = new Blob([noteText], { type: "text/plain;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `Ara-Birthday-Letter-${new Date().toISOString().slice(0, 10)}.txt`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        });
+      }
+
+      // Custom fairy cursor follower & tooltips
+      window.addEventListener("mousemove", (e) => {
+        if (customCursor) {
+          customCursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        }
+        if (cursorTooltip && cursorTooltip.classList.contains("visible")) {
+          cursorTooltip.style.transform = `translate(${e.clientX + 14}px, ${e.clientY + 14}px)`;
+        }
+      });
+
+      window.addEventListener("mousedown", () => {
+        if (customCursor) customCursor.classList.add("cursor-clicking");
+      });
+
+      window.addEventListener("mouseup", () => {
+        if (customCursor) customCursor.classList.remove("cursor-clicking");
+      });
+
+      // Mouse window boundary handlers for custom fairy cursor
+      document.addEventListener("mouseleave", () => {
+        if (customCursor) customCursor.style.opacity = "0";
+        if (cursorTooltip) cursorTooltip.classList.remove("visible");
+      });
+      document.addEventListener("mouseenter", () => {
+        if (customCursor) customCursor.style.opacity = "1";
+      });
+
+      // Interactive hover feedback for UI buttons anywhere (curtain, controls, cards)
+      document.addEventListener("mouseover", (e) => {
+        if (e.target.closest("button, a, [role='button'], input, .countdown-unit, .brand-badge, .curtain-audio-pill, .letter-btn")) {
+          if (customCursor) customCursor.classList.add("hovering-target");
+        }
+      });
+      document.addEventListener("mouseout", (e) => {
+        if (e.target.closest("button, a, [role='button'], input, .countdown-unit, .brand-badge, .curtain-audio-pill, .letter-btn")) {
+          if (customCursor) customCursor.classList.remove("hovering-target");
+        }
+      });
+
+      // Listen for hover target updates from Garden simulation
+      window.addEventListener("garden-hover-target", (e) => {
+        // If birthday curtain is draped over the garden, suppress all garden object tooltips
+        if (window.birthdayCurtain && !window.birthdayCurtain.isLifted) {
+          if (cursorTooltip) cursorTooltip.classList.remove("visible");
+          if (customCursor) customCursor.classList.remove("hovering-target");
+          return;
+        }
+
+        const { target, label, clientX, clientY } = e.detail;
+        if (customCursor) {
+          if (target) {
+            customCursor.classList.add("hovering-target");
+          } else {
+            customCursor.classList.remove("hovering-target");
+          }
+        }
+        if (cursorTooltip) {
+          if (label) {
+            cursorTooltip.textContent = label;
+            cursorTooltip.classList.add("visible");
+            cursorTooltip.style.transform = `translate(${clientX + 14}px, ${clientY + 14}px)`;
+          } else {
+            cursorTooltip.classList.remove("visible");
+          }
+        }
+      });
+
+      // Listen for Garden Discovery updates
+      window.addEventListener("garden-discovery-update", (e) => {
+        const d = e.detail;
+        if (discoveryCount) discoveryCount.textContent = `${d.score}/5`;
+        if (discoveryProgressTxt) discoveryProgressTxt.textContent = `${Math.round((d.score / 5) * 100)}%`;
+        if (bloomedCountTxt) bloomedCountTxt.textContent = `${d.flowers}`;
+
+        const updateItem = (id, isDone) => {
+          const el = document.getElementById(id);
+          if (el) {
+            if (isDone) el.classList.add("completed");
+            else el.classList.remove("completed");
+          }
+        };
+
+        updateItem("wonder-lantern", d.lantern);
+        updateItem("wonder-chimes", d.chimes);
+        updateItem("wonder-flowers", d.flowers >= 5);
+        updateItem("wonder-pond", d.pond);
+        updateItem("wonder-tree", d.tree);
+      });
+
+      // Global Keyboard Accessibility Shortcuts
+      window.addEventListener("keydown", (e) => {
+        // Spacebar -> Wish upon a star (if letter not open and curtain is lifted)
+        if (e.code === "Space" && (!letterOverlay || !letterOverlay.classList.contains("visible"))) {
+          if (window.birthdayCurtain && !window.birthdayCurtain.isLifted) return;
+          e.preventDefault();
+          if (window.garden) window.garden.triggerWish();
+        }
+
+        // M key -> Toggle sound
+        if ((e.key === "m" || e.key === "M") && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
+          if (audioToggle) audioToggle.click();
+        }
+
+        // Escape key -> dismiss letter or dropdown
+        if (e.key === "Escape") {
+          if (discoveryDropdown && discoveryDropdown.classList.contains("visible")) {
+            discoveryDropdown.classList.remove("visible");
+          } else if (letterOverlay && letterOverlay.classList.contains("visible") && closeLetterBtn) {
+            closeLetterBtn.click();
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
