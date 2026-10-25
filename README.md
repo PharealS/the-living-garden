@@ -49,8 +49,7 @@ Open `http://localhost:8080/` in your browser.
 
 ## 🗝️ Developer Shortcuts
 
-- **`Ctrl + Shift + P`**: Toggle/preview the birthday curtain open or closed.
-- **`Ctrl + Shift + L`**: Secret immediate blossom trigger.
+
 - **`Spacebar`**: Make a wish upon a shooting star.
 - **`M`**: Mute / unmute soundtrack.
 - **`Esc`**: Dismiss letter overlay.
