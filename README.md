@@ -8,8 +8,8 @@ A bespoke, indie-aesthetic interactive pixel art living garden built with pure v
 
 ## ✨ Features
 
-- **Enchanted Theatrical Birthday Curtain**: Rich velvet drape physics, royal gold valance, starlight spores, and a real-time countdown to **August 7, 2027**.
-- **Procedural Web Audio Engine**: Zero-dependency synthesizer generating dynamic piano chords (inspired by Ludovico Einaudi's *Nuvole Bianche*), music-box lullabies, wind chimes, and ambient evening wind.
+- **Persistent Progress Caching (`localStorage`)**: Nurtured flowers, blooming lotuses, lantern illumination, awakening progress, and the grand bloomed cherry tree persist across visits and reloads.
+- **Procedural Web Audio Engine**: Zero-dependency synthesizer generating dynamic piano chords (inspired by Ludovico Einaudi's *Nuvole Bianche*), celestial bells, wind chimes, and ambient evening wind.
 - **16-Frame Continuous Sakura Growth**: An organic growth system where the tree trunk shoots upward out of the soil and foliage unfurls continuously into full bloom.
 - **Carved Trunk Inscription**: Romantic initials (`A + A ♡`) engraved into the bark.
 - **Interactive Meadow Ecosystem**:
@@ -47,12 +47,12 @@ Open `http://localhost:8080/` in your browser.
 
 ---
 
-## 🗝️ Developer Shortcuts
-
+## 🗝️ Shortcuts & Utilities
 
 - **`Spacebar`**: Make a wish upon a shooting star.
 - **`M`**: Mute / unmute soundtrack.
 - **`Esc`**: Dismiss letter overlay.
+- **`window.resetGardenProgress()`**: In browser DevTools console to reset progress and start fresh.
 
 ---
 

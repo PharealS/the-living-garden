@@ -180,6 +180,12 @@ class LivingGarden {
     // Setup input listeners
     this.bindEvents();
 
+    // Restore cached garden progress if visitor previously watered/bloomed the garden
+    this.loadProgress();
+
+    // Auto-save garden progress before page unloads or reloads
+    window.addEventListener("beforeunload", () => this.saveProgress());
+
     // Start simulation loop
     this.lastTime = performance.now();
     requestAnimationFrame((t) => this.loop(t));
@@ -187,21 +193,25 @@ class LivingGarden {
     // Emit initial discovery state
     setTimeout(() => this.emitDiscoveryUpdate(), 250);
 
-    // Set environmental hint from config if available (stays for 10s, unaffected by pointer, then gradually fades)
+    // Set environmental hint from config if available (only if garden is not already bloomed)
     const config = window.GARDEN_CONFIG || {};
     const hintEl = document.getElementById("environmental-hint");
     const hintTextEl = document.getElementById("hint-text");
     if (hintEl) {
-      if (config.introHint) {
-        if (hintTextEl) hintTextEl.textContent = config.introHint;
-        else hintEl.textContent = config.introHint;
-      }
-      setTimeout(() => {
-        hintEl.style.opacity = "0";
+      if (this.state.isTransformed) {
+        hintEl.style.display = "none";
+      } else {
+        if (config.introHint) {
+          if (hintTextEl) hintTextEl.textContent = config.introHint;
+          else hintEl.textContent = config.introHint;
+        }
         setTimeout(() => {
-          hintEl.style.display = "none";
-        }, 3200);
-      }, 10000);
+          hintEl.style.opacity = "0";
+          setTimeout(() => {
+            hintEl.style.display = "none";
+          }, 3200);
+        }, 10000);
+      }
     }
   }
 
@@ -414,12 +424,6 @@ class LivingGarden {
         this.wateringCan.y = this.cursor.y - 14;
       }
 
-      // If birthday curtain is draped, suppress garden object interactions
-      if (window.birthdayCurtain && !window.birthdayCurtain.isLifted) {
-        this.clearHoverEntity();
-        return;
-      }
-
       // Interactive Wind Chime hover/swipe
       this.checkChimeInteraction();
 
@@ -442,11 +446,6 @@ class LivingGarden {
       const v = this.renderer.screenToVirtual(clientX, clientY);
       this.cursor.x = v.x;
       this.cursor.y = v.y;
-
-      // If birthday curtain is draped, ignore clicks on background garden objects
-      if (window.birthdayCurtain && !window.birthdayCurtain.isLifted) {
-        return;
-      }
 
       this.onFirstInteraction();
 
@@ -558,12 +557,6 @@ class LivingGarden {
    * Evaluates what interactive entity the cursor is currently hovering over
    */
   checkHoverEntity(clientX, clientY) {
-    // If birthday curtain is draped over the garden, suppress all hover targets and tooltips
-    if (window.birthdayCurtain && !window.birthdayCurtain.isLifted) {
-      this.clearHoverEntity();
-      return;
-    }
-
     let target = null;
     let label = "";
 
@@ -726,6 +719,7 @@ class LivingGarden {
       }
 
       this.checkAwakeningProgression();
+      this.saveProgress();
     }
   }
 
@@ -757,6 +751,7 @@ class LivingGarden {
 
     this.state.windChimeHits++;
     this.checkAwakeningProgression();
+    this.saveProgress();
   }
 
   checkChimeInteraction() {
@@ -782,6 +777,7 @@ class LivingGarden {
       this.audio.playWaterRipple();
       this.state.pondInteractions++;
       this.checkAwakeningProgression();
+      this.saveProgress();
     }
   }
 
@@ -793,6 +789,7 @@ class LivingGarden {
         this.audio.playFlowerBloom();
         this.spawnPollen(lotus.x, lotus.y - 4, 6);
         this.checkAwakeningProgression();
+        this.saveProgress();
       }
     });
   }
@@ -905,6 +902,9 @@ class LivingGarden {
       // Peak of transformation
       this.state.isTransformed = true;
       this.state.isTransforming = false;
+      this.spiritTree.growthProgress = 1.0;
+      this.spiritTree.grown = true;
+      this.saveProgress();
 
       // Reveal the emotional birthday message inside the garden
       this.revealBirthdayLetter();
@@ -939,26 +939,17 @@ class LivingGarden {
   }
 
   /**
-   * Reveals the wholesome personal romantic birthday letter inside the living garden.
+   * Populates letter typography and keepsake text from window.GARDEN_CONFIG
    */
-  revealBirthdayLetter() {
-    this.state.letterRevealed = true;
-    if (this.audio) {
-      this.audio.playLetterOpen();
-      this.audio.duckMusic(0.32, 1.4);
-    }
-    const letterOverlay = document.getElementById("letter-overlay");
-    const letterContainer = document.getElementById("letter-container");
+  populateLetterContent() {
     const config = window.GARDEN_CONFIG || {};
-
-    // Populate letter content from CONFIG
     const headingEl = document.getElementById("letter-heading");
     const bodyEl = document.getElementById("letter-body");
     const signatureEl = document.getElementById("letter-signature");
     const specialDateEl = document.getElementById("letter-date");
 
     if (headingEl) {
-      headingEl.textContent = config.letterHeading || `Happy Birthday, ${config.recipientName || "My Love"}`;
+      headingEl.textContent = config.letterHeading || "To the Love of my Life.";
     }
 
     if (specialDateEl && config.specialDate) {
@@ -976,8 +967,23 @@ class LivingGarden {
     }
 
     if (signatureEl) {
-      signatureEl.innerHTML = `<em>${config.letterClosing || "With all my love,"}</em><br><strong>${config.letterSignature || config.senderName || ""}</strong>`;
+      signatureEl.innerHTML = `<em>${config.letterClosing || "Forever yours,"}</em><br><strong>${config.letterSignature || config.senderName || "Atharv"}</strong>`;
     }
+  }
+
+  /**
+   * Reveals the wholesome personal romantic birthday letter inside the living garden.
+   */
+  revealBirthdayLetter() {
+    this.state.letterRevealed = true;
+    this.saveProgress();
+
+    if (this.audio) {
+      this.audio.playLetterOpen();
+      this.audio.duckMusic(0.32, 1.4);
+    }
+    const letterOverlay = document.getElementById("letter-overlay");
+    this.populateLetterContent();
 
     // Smoothly fade in the letter directly inside the living garden
     if (letterOverlay) {
@@ -985,6 +991,205 @@ class LivingGarden {
       setTimeout(() => {
         letterOverlay.classList.add("visible");
       }, 500);
+    }
+  }
+
+  /**
+   * Saves visitor's garden progress (flowers, lotuses, tree growth, lantern, awakening level)
+   * to localStorage so progress persists across browser reloads and future visits.
+   */
+  saveProgress() {
+    try {
+      const data = {
+        version: 1,
+        timestamp: Date.now(),
+        isTransformed: !!this.state.isTransformed,
+        treeGrowth: this.spiritTree.growthProgress,
+        treeGrown: !!this.spiritTree.grown,
+        lanternLit: !!this.state.lanternLit,
+        windChimeHits: this.state.windChimeHits,
+        pondInteractions: this.state.pondInteractions,
+        wateredCount: this.state.wateredCount,
+        flowersBloomed: this.state.flowersBloomed,
+        awakeningLevel: this.state.awakeningLevel,
+        letterRevealed: !!this.state.letterRevealed,
+        flowers: this.flowers.map(f => ({
+          watered: !!f.watered,
+          bloomRatio: Math.round(f.bloomRatio * 100) / 100,
+          targetBloom: f.targetBloom
+        })),
+        lotuses: this.pond.lotuses.map(l => ({
+          bloomed: !!l.bloomed,
+          bloomRatio: Math.round((l.bloomRatio || 0) * 100) / 100
+        }))
+      };
+      localStorage.setItem("living_garden_save_v1", JSON.stringify(data));
+    } catch (err) {
+      console.warn("Could not save garden progress:", err);
+    }
+  }
+
+  /**
+   * Restores cached garden state from localStorage.
+   * If visitor had blossomed the tree and transformed the garden, loads directly
+   * into that completed state with full blossoms, active butterflies, and keepsake button.
+   */
+  loadProgress() {
+    try {
+      const raw = localStorage.getItem("living_garden_save_v1");
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (!data) return;
+
+      this.populateLetterContent();
+
+      if (data.isTransformed) {
+        this.state.isTransformed = true;
+        this.state.isTransforming = false;
+        this.spiritTree.growthProgress = 1.0;
+        this.spiritTree.grown = true;
+        this.spiritTree.alpha = 1.0;
+        this.mysteriousSeed.pulse = 1.0;
+        this.state.lanternLit = true;
+        this.state.awakeningLevel = 1.0;
+        this.state.flowersBloomed = this.flowers.length;
+        this.state.wateredCount = this.flowers.length;
+        this.state.letterRevealed = true;
+        this.state.windChimeHits = Math.max(1, data.windChimeHits || 1);
+        this.state.pondInteractions = Math.max(3, data.pondInteractions || 3);
+
+        // Fully bloom all flowers
+        this.flowers.forEach(fl => {
+          fl.watered = true;
+          fl.bloomRatio = 1.0;
+          fl.targetBloom = 1.0;
+        });
+
+        // Fully bloom all pond water lilies
+        this.pond.lotuses.forEach(lotus => {
+          lotus.bloomed = true;
+          lotus.bloomRatio = 1.0;
+        });
+
+        // Hide environmental hint
+        const hintEl = document.getElementById("environmental-hint");
+        if (hintEl) {
+          hintEl.style.display = "none";
+          hintEl.style.opacity = "0";
+        }
+
+        // Show keepsake letter reopen button
+        const reopenBtn = document.getElementById("letter-reopen-btn");
+        if (reopenBtn) {
+          reopenBtn.classList.add("visible");
+        }
+
+        // Configure audio for awakened state
+        if (this.audio) {
+          this.audio.setAwakeningLevel(1.0);
+          this.audio.transformed = true;
+        }
+
+        // Fill out fireflies for lush awakened sanctuary
+        while (this.fireflies.length < 36) {
+          this.fireflies.push({
+            x: 80 + Math.random() * 480,
+            y: 100 + Math.random() * 200,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            alpha: 0.1,
+            pulseSpeed: 0.02 + Math.random() * 0.03,
+            pulsePhase: Math.random() * Math.PI,
+            pulse: 0.5,
+            glowRadius: 18,
+            curiosity: false
+          });
+        }
+
+        // Ensure azure butterfly is active
+        if (this.butterflies.length === 1) {
+          this.butterflies.push({
+            x: 480,
+            y: 200,
+            targetX: 420,
+            targetY: 230,
+            variant: "azure",
+            frame: 0,
+            frameTimer: 0,
+            flightTimer: 0,
+            isResting: false,
+            restDuration: 0
+          });
+        }
+
+        this.emitDiscoveryUpdate();
+        return;
+      }
+
+      // Restore partial progress
+      if (typeof data.treeGrowth === "number") {
+        this.spiritTree.growthProgress = Math.max(0, Math.min(1.0, data.treeGrowth));
+        if (this.spiritTree.growthProgress >= 1.0) {
+          this.spiritTree.grown = true;
+        }
+      }
+      if (data.lanternLit) {
+        this.state.lanternLit = true;
+      }
+      if (typeof data.windChimeHits === "number") {
+        this.state.windChimeHits = data.windChimeHits;
+      }
+      if (typeof data.pondInteractions === "number") {
+        this.state.pondInteractions = data.pondInteractions;
+      }
+      if (typeof data.wateredCount === "number") {
+        this.state.wateredCount = data.wateredCount;
+      }
+      if (typeof data.awakeningLevel === "number") {
+        this.state.awakeningLevel = Math.max(0, Math.min(1.0, data.awakeningLevel));
+      }
+      if (data.letterRevealed) {
+        this.state.letterRevealed = true;
+        const reopenBtn = document.getElementById("letter-reopen-btn");
+        if (reopenBtn) reopenBtn.classList.add("visible");
+      }
+
+      if (Array.isArray(data.flowers) && data.flowers.length === this.flowers.length) {
+        data.flowers.forEach((saved, idx) => {
+          if (saved.watered) {
+            this.flowers[idx].watered = true;
+            this.flowers[idx].bloomRatio = saved.bloomRatio !== undefined ? saved.bloomRatio : 1.0;
+            this.flowers[idx].targetBloom = saved.targetBloom !== undefined ? saved.targetBloom : 1.0;
+          }
+        });
+        this.state.flowersBloomed = this.flowers.filter(f => f.watered || f.bloomRatio > 0.7).length;
+      }
+
+      if (Array.isArray(data.lotuses) && data.lotuses.length === this.pond.lotuses.length) {
+        data.lotuses.forEach((saved, idx) => {
+          if (saved.bloomed) {
+            this.pond.lotuses[idx].bloomed = true;
+            this.pond.lotuses[idx].bloomRatio = saved.bloomRatio !== undefined ? saved.bloomRatio : 1.0;
+          }
+        });
+      }
+
+      this.checkAwakeningProgression();
+      this.emitDiscoveryUpdate();
+    } catch (err) {
+      console.warn("Could not load garden progress:", err);
+    }
+  }
+
+  /**
+   * Resets cached garden progress and reloads
+   */
+  resetProgress() {
+    try {
+      localStorage.removeItem("living_garden_save_v1");
+      window.location.reload();
+    } catch (err) {
+      console.warn("Could not reset garden progress:", err);
     }
   }
 
@@ -1115,8 +1320,12 @@ class LivingGarden {
     if (this.state.isTransforming || this.state.isTransformed) {
       if (this.spiritTree.growthProgress < 1.0) {
         this.spiritTree.growthProgress += dt * 0.18; // smooth growth over ~5.5s
-        if (this.spiritTree.growthProgress > 1.0) {
+        if (this.spiritTree.growthProgress >= 1.0) {
           this.spiritTree.growthProgress = 1.0;
+          if (!this.spiritTree.grown) {
+            this.spiritTree.grown = true;
+            this.saveProgress();
+          }
         }
       }
       this.mysteriousSeed.pulse = 1.0;
@@ -1199,7 +1408,9 @@ class LivingGarden {
               this.audio.playFlowerBloom();
               this.spawnPollen(fl.x + 12, fl.y + 8, 6);
               this.state.flowersBloomed++;
+              this.state.wateredCount++;
               this.checkAwakeningProgression();
+              this.saveProgress();
             }
           }
         });
@@ -1212,6 +1423,7 @@ class LivingGarden {
             this.audio.playFlowerBloom();
             this.spawnPollen(lotus.x, lotus.y - 4, 6);
             this.checkAwakeningProgression();
+            this.saveProgress();
           }
         });
 
@@ -2118,3 +2330,10 @@ window.addEventListener("DOMContentLoaded", () => {
     window.garden = window.livingGarden;
   }
 });
+
+// Utility helper to reset garden progress if visitor wants a fresh play
+window.resetGardenProgress = () => {
+  if (window.garden) {
+    window.garden.resetProgress();
+  }
+};

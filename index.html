@@ -166,108 +166,17 @@
     </div>
   </div>
 
-  <!-- Floating Atharv Preview Banner (Re-drapes curtain during preview) -->
-  <div id="curtain-preview-banner">
-    <button id="curtain-redrape-btn">
-      <span>🎭</span>
-      <span>Curtain Preview Mode · <strong>Re-drape</strong></span>
-    </button>
-  </div>
-
-  <!-- Enchanted Theatrical Birthday Curtain Overlay -->
-  <div id="birthday-curtain">
-    <!-- Velvet Drapes with Royal Silk Folds -->
-    <div class="curtain-panel curtain-left" id="curtain-left"></div>
-    <div class="curtain-panel curtain-right" id="curtain-right"></div>
-    
-    <!-- Top Ornate Valance & Golden Trim -->
-    <div class="curtain-valance" id="curtain-valance">
-      <div class="valance-stars">
-        <span>✦</span><span>✧</span><span>✦</span><span>✧</span><span>✦</span>
-      </div>
-    </div>
-
-    <!-- Floating Stardust Particles -->
-    <div class="curtain-stardust" id="curtain-stardust"></div>
-
-    <!-- Center Theatrical Glassmorphic Card -->
-    <div class="curtain-content" id="curtain-content">
-      <div class="curtain-card">
-        <!-- Corner Filigree Ornaments -->
-        <span class="plaque-corner plaque-tl">✦</span>
-        <span class="plaque-corner plaque-tr">✦</span>
-        <span class="plaque-corner plaque-bl">✦</span>
-        <span class="plaque-corner plaque-br">✦</span>
-
-        <!-- Luminous Botanical Emblem -->
-        <div class="curtain-emblem-wrap">
-          <div class="curtain-emblem-halo"></div>
-          <div class="curtain-emblem">🌱</div>
-        </div>
-
-        <div class="curtain-badge">Dedicated to Ara</div>
-
-        <h1 class="curtain-title">The gardener is working, shh... 🤫</h1>
-
-        <p class="curtain-quote">
-          “A secret sanctuary is being quietly nurtured in the starlight just for you.<br>
-          Every petal, lantern, and ripple is preparing for your special day.”
-        </p>
-
-        <div class="curtain-divider">
-          <span>✦</span> <span>✧</span> <span>✦</span>
-        </div>
-
-        <!-- Real-Time Countdown (Days : Hours : Minutes : Seconds) -->
-        <div class="countdown-container" id="curtain-countdown">
-          <div class="countdown-unit">
-            <div class="countdown-val" id="cd-days">--</div>
-            <div class="countdown-lbl">Days</div>
-          </div>
-          <div class="countdown-colon">:</div>
-          <div class="countdown-unit">
-            <div class="countdown-val" id="cd-hours">--</div>
-            <div class="countdown-lbl">Hours</div>
-          </div>
-          <div class="countdown-colon">:</div>
-          <div class="countdown-unit">
-            <div class="countdown-val" id="cd-mins">--</div>
-            <div class="countdown-lbl">Minutes</div>
-          </div>
-          <div class="countdown-colon">:</div>
-          <div class="countdown-unit">
-            <div class="countdown-val" id="cd-secs">--</div>
-            <div class="countdown-lbl">Seconds</div>
-          </div>
-        </div>
-
-        <div class="curtain-target-date">
-          <span class="target-star">✨</span>
-          <span>Gates unlock on August 7, 2027</span>
-          <span class="target-star">✨</span>
-        </div>
-
-        <!-- Curtain Ambient Music Pill -->
-        <button id="curtain-audio-toggle" class="curtain-audio-pill" title="Toggle Ambient Music" aria-label="Toggle Sound">
-          <span class="curtain-audio-icon">🎵</span>
-          <span id="curtain-audio-label">Ambient Sound · Playing</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- Custom Fairy Stardust Cursor & Dynamic Tooltip (Root Top Layer) -->
   <div id="custom-cursor">
     <div class="cursor-glow"></div>
     <div class="cursor-core"></div>
   </div>
   <div id="cursor-tooltip"></div>
-  <script src="js/config.js?v=13"></script>
-  <script src="js/audio.js?v=13"></script>
-  <script src="js/sprites.js?v=13"></script>
-  <script src="js/renderer.js?v=13"></script>
-  <script src="js/garden.js?v=13"></script>
-  <script src="js/curtain.js?v=13"></script>
+  <script src="js/config.js?v=14"></script>
+  <script src="js/audio.js?v=14"></script>
+  <script src="js/sprites.js?v=14"></script>
+  <script src="js/renderer.js?v=14"></script>
+  <script src="js/garden.js?v=14"></script>
 
   <script>
     // Wire UI Elements with enhanced UX micro-interactions
@@ -376,6 +285,9 @@
       if (reopenLetterBtn && letterOverlay) {
         reopenLetterBtn.addEventListener("click", (e) => {
           e.stopPropagation();
+          if (window.garden && window.garden.populateLetterContent) {
+            window.garden.populateLetterContent();
+          }
           if (window.gardenAudio) {
             window.gardenAudio.playLetterOpen();
             window.gardenAudio.duckMusic(0.3, 1.4);
@@ -435,27 +347,20 @@
         if (customCursor) customCursor.style.opacity = "1";
       });
 
-      // Interactive hover feedback for UI buttons anywhere (curtain, controls, cards)
+      // Interactive hover feedback for UI buttons and clickable controls
       document.addEventListener("mouseover", (e) => {
-        if (e.target.closest("button, a, [role='button'], input, .countdown-unit, .brand-badge, .curtain-audio-pill, .letter-btn")) {
+        if (e.target.closest("button, a, [role='button'], input, .brand-badge, .letter-btn")) {
           if (customCursor) customCursor.classList.add("hovering-target");
         }
       });
       document.addEventListener("mouseout", (e) => {
-        if (e.target.closest("button, a, [role='button'], input, .countdown-unit, .brand-badge, .curtain-audio-pill, .letter-btn")) {
+        if (e.target.closest("button, a, [role='button'], input, .brand-badge, .letter-btn")) {
           if (customCursor) customCursor.classList.remove("hovering-target");
         }
       });
 
       // Listen for hover target updates from Garden simulation
       window.addEventListener("garden-hover-target", (e) => {
-        // If birthday curtain is draped over the garden, suppress all garden object tooltips
-        if (window.birthdayCurtain && !window.birthdayCurtain.isLifted) {
-          if (cursorTooltip) cursorTooltip.classList.remove("visible");
-          if (customCursor) customCursor.classList.remove("hovering-target");
-          return;
-        }
-
         const { target, label, clientX, clientY } = e.detail;
         if (customCursor) {
           if (target) {
@@ -499,9 +404,8 @@
 
       // Global Keyboard Accessibility Shortcuts
       window.addEventListener("keydown", (e) => {
-        // Spacebar -> Wish upon a star (if letter not open and curtain is lifted)
+        // Spacebar -> Wish upon a star (if letter not open)
         if (e.code === "Space" && (!letterOverlay || !letterOverlay.classList.contains("visible"))) {
-          if (window.birthdayCurtain && !window.birthdayCurtain.isLifted) return;
           e.preventDefault();
           if (window.garden) window.garden.triggerWish();
         }

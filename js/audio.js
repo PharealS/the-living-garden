@@ -312,7 +312,7 @@ class GardenAudio {
 
   /**
    * Delicate Celestial Music Box / Celesta Synthesizer
-   * Creates a crystal, lullaby chime tone for the birthday curtain atmosphere.
+   * Creates a crystal, lullaby chime tone for ethereal atmospheric wonder.
    */
   playMusicBoxNote(freq, velocity = 0.35, duration = 2.6) {
     if (!this.ctx || this.isMuted) return;
@@ -403,16 +403,8 @@ class GardenAudio {
           const vel = 0.28 + Math.random() * 0.15;
           this.playPianoNote(noteFreq, vel, 2.8);
 
-          // If curtain is draped, add celestial lullaby music box tones
-          if (window.birthdayCurtain && !window.birthdayCurtain.isLifted) {
-            if (idx % 2 === 0 || Math.random() > 0.4) {
-              setTimeout(() => {
-                this.playMusicBoxNote(noteFreq * 2, 0.24, 2.5);
-              }, 220);
-            }
-          }
           // If garden is awakening or transformed, occasionally sprinkle a high octave bell
-          else if ((this.awakening > 0.4 || this.transformed) && Math.random() > 0.45) {
+          if ((this.awakening > 0.4 || this.transformed) && Math.random() > 0.45) {
             setTimeout(() => {
               this.playPianoNote(noteFreq * 2, 0.2, 2.2);
             }, 320);
